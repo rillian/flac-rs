@@ -132,7 +132,7 @@ pub fn channel_bits(input: &[u8])
   let mut channels       = 2;
   let channel_byte       = byte >> 4;
   let channel_assignment = match channel_byte {
-    0b0000...0b0111 => {
+    0b0000..=0b0111 => {
       channels = channel_byte + 1;
 
       ChannelAssignment::Independent
@@ -163,12 +163,12 @@ pub fn utf8_header(input: &[u8], is_u64: bool)
                    -> IResult<&[u8], Option<(usize, u8)>, ErrorKind> {
   map!(input, be_u8, |byte| {
     match byte {
-      0b00000000...0b01111111 => Some((0, byte)),
-      0b11000000...0b11011111 => Some((1, byte & 0b00011111)),
-      0b11100000...0b11101111 => Some((2, byte & 0b00001111)),
-      0b11110000...0b11110111 => Some((3, byte & 0b00000111)),
-      0b11111000...0b11111011 => Some((4, byte & 0b00000011)),
-      0b11111100...0b11111101 => Some((5, byte & 0b00000001)),
+      0b00000000..=0b01111111 => Some((0, byte)),
+      0b11000000..=0b11011111 => Some((1, byte & 0b00011111)),
+      0b11100000..=0b11101111 => Some((2, byte & 0b00001111)),
+      0b11110000..=0b11110111 => Some((3, byte & 0b00000111)),
+      0b11111000..=0b11111011 => Some((4, byte & 0b00000011)),
+      0b11111100..=0b11111101 => Some((5, byte & 0b00000001)),
       0b11111110              => if is_u64 { Some((6, 0)) } else { None },
       _                       => None,
     }
@@ -254,9 +254,9 @@ pub fn header<'a>(input: &'a [u8], stream_info: &StreamInfo)
 
       let block_size = match block_byte {
         0b0001          => 192,
-        0b0010...0b0101 => 576 * power_of_two(block_byte as u32 - 2),
+        0b0010..=0b0101 => 576 * power_of_two(block_byte as u32 - 2),
         0b0110 | 0b0111 => alt_block_size.unwrap() + 1,
-        0b1000...0b1111 => 256 * power_of_two(block_byte as u32 - 8),
+        0b1000..=0b1111 => 256 * power_of_two(block_byte as u32 - 8),
         _               => unreachable!(),
       };
 

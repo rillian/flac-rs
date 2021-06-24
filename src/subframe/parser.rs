@@ -147,9 +147,9 @@ fn data<'a, S>(input: (&'a [u8], usize),
     0b000000            => constant(input, bits_per_sample),
     0b000001            => verbatim(input, bits_per_sample, block_size)
                              .map_err(to_custom_error!(VerbatimParser)),
-    0b001000...0b001100 => fixed(input, subframe_type & 0b0111,
+    0b001000..=0b001100 => fixed(input, subframe_type & 0b0111,
                                  bits_per_sample, block_size, buffer),
-    0b100000...0b111111 => lpc(input, (subframe_type & 0b011111) + 1,
+    0b100000..=0b111111 => lpc(input, (subframe_type & 0b011111) + 1,
                                bits_per_sample, block_size, buffer),
     _                   => IResult::Error(Err::Position(
                              nom::ErrorKind::Custom(ErrorKind::Unknown),

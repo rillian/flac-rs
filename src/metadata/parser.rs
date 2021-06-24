@@ -305,7 +305,7 @@ pub fn block_data(input: &[u8], block_type: u8, length: u32)
     4       => vorbis_comment(input),
     5       => cue_sheet(input),
     6       => picture(input),
-    7...126 => unknown(input, length),
+    7..=126 => unknown(input, length),
     _       => IResult::Error(Err::Code(
                  nom::ErrorKind::Custom(ErrorKind::InvalidBlockType))),
   }
