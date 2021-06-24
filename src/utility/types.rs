@@ -359,7 +359,7 @@ impl<R> StreamProducer for ReadStream<R> where R: Read {
       self.fill().map_err(|e| ErrorKind::IO(e.kind()))?;
     }
 
-    let mut buffer = &mut self.buffer;
+    let buffer = &mut self.buffer;
 
     if buffer.is_empty() {
       self.state = ParserState::EndOfInput;
