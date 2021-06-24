@@ -53,10 +53,10 @@ fn print_vorbis_comments(vorbis_comment: &VorbisComment, args: &Arguments) {
 
 fn export_vorbis_comments(vorbis_comment: &VorbisComment, filename: &str)
                           -> io::Result<()> {
-  let mut file = try!(File::create(filename));
+  let mut file = File::create(filename)?;
 
   for (name, value) in &vorbis_comment.comments {
-    try!(write!(file, "{}={}\n", name, value));
+    write!(file, "{}={}\n", name, value)?;
   }
 
   Ok(())

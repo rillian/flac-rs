@@ -129,33 +129,33 @@ impl Metadata {
       Data::StreamInfo(ref stream_info)       => {
         let length = stream_info.bytes_len();
 
-        try!(buffer.write_u8(byte + 0));
+        buffer.write_u8(byte + 0)?;
 
-        try!(buffer.write_be_u24(length as u32));
+        buffer.write_be_u24(length as u32)?;
 
-        try!(stream_info.to_bytes(buffer));
+        stream_info.to_bytes(buffer)?;
 
         Ok(())
       }
       Data::Padding(length)                   => {
         let padding = vec![0; length as usize];
 
-        try!(buffer.write_u8(byte + 1));
+        buffer.write_u8(byte + 1)?;
 
-        try!(buffer.write_be_u24(length));
+        buffer.write_be_u24(length)?;
 
-        try!(buffer.write_all(&padding));
+        buffer.write_all(&padding)?;
 
         Ok(())
       }
       Data::Application(ref application)      => {
         let length = application.bytes_len();
 
-        try!(buffer.write_u8(byte + 2));
+        buffer.write_u8(byte + 2)?;
 
-        try!(buffer.write_be_u24(length as u32));
+        buffer.write_be_u24(length as u32)?;
 
-        try!(application.to_bytes(buffer));
+        application.to_bytes(buffer)?;
 
         Ok(())
       }
@@ -163,12 +163,12 @@ impl Metadata {
         let length = seek_points.iter().fold(0, |result, seek_point|
                        result + seek_point.bytes_len());
 
-        try!(buffer.write_u8(byte + 3));
+        buffer.write_u8(byte + 3)?;
 
-        try!(buffer.write_be_u24(length as u32));
+        buffer.write_be_u24(length as u32)?;
 
         for seek_point in seek_points {
-          try!(seek_point.to_bytes(buffer));
+          seek_point.to_bytes(buffer)?;
         }
 
         Ok(())
@@ -176,44 +176,44 @@ impl Metadata {
       Data::VorbisComment(ref vorbis_comment) => {
         let length = vorbis_comment.bytes_len();
 
-        try!(buffer.write_u8(byte + 4));
+        buffer.write_u8(byte + 4)?;
 
-        try!(buffer.write_be_u24(length as u32));
+        buffer.write_be_u24(length as u32)?;
 
-        try!(vorbis_comment.to_bytes(buffer));
+        vorbis_comment.to_bytes(buffer)?;
 
         Ok(())
       }
       Data::CueSheet(ref cue_sheet)           => {
         let length = cue_sheet.bytes_len();
 
-        try!(buffer.write_u8(byte + 5));
+        buffer.write_u8(byte + 5)?;
 
-        try!(buffer.write_be_u24(length as u32));
+        buffer.write_be_u24(length as u32)?;
 
-        try!(cue_sheet.to_bytes(buffer));
+        cue_sheet.to_bytes(buffer)?;
 
         Ok(())
       }
       Data::Picture(ref picture)              => {
         let length = picture.bytes_len();
 
-        try!(buffer.write_u8(byte + 6));
+        buffer.write_u8(byte + 6)?;
 
-        try!(buffer.write_be_u24(length as u32));
+        buffer.write_be_u24(length as u32)?;
 
-        try!(picture.to_bytes(buffer));
+        picture.to_bytes(buffer)?;
 
         Ok(())
       }
       Data::Unknown(ref unknown)              => {
         let length = unknown.len();
 
-        try!(buffer.write_u8(byte + 7));
+        buffer.write_u8(byte + 7)?;
 
-        try!(buffer.write_be_u24(length as u32));
+        buffer.write_be_u24(length as u32)?;
 
-        try!(buffer.write_all(&unknown));
+        buffer.write_all(&unknown)?;
 
         Ok(())
       },
@@ -290,11 +290,11 @@ impl StreamInfo {
 
   pub fn to_bytes<Write: io::Write>(&self, buffer: &mut Write)
                                     -> io::Result<()> {
-    try!(buffer.write_be_u16(self.min_block_size));
-    try!(buffer.write_be_u16(self.max_block_size));
+    buffer.write_be_u16(self.min_block_size)?;
+    buffer.write_be_u16(self.max_block_size)?;
 
-    try!(buffer.write_be_u24(self.min_frame_size));
-    try!(buffer.write_be_u24(self.max_frame_size));
+    buffer.write_be_u24(self.min_frame_size)?;
+    buffer.write_be_u24(self.max_frame_size)?;
 
     let bytes = [
       (self.sample_rate >> 12) as u8,
@@ -306,9 +306,9 @@ impl StreamInfo {
       ((self.bits_per_sample - 1) << 4) | ((self.total_samples >> 32) as u8),
     ];
 
-    try!(buffer.write_all(&bytes));
+    buffer.write_all(&bytes)?;
 
-    try!(buffer.write_be_u32(self.total_samples as u32));
+    buffer.write_be_u32(self.total_samples as u32)?;
 
     buffer.write_all(&self.md5_sum)
   }
@@ -331,7 +331,7 @@ impl Application {
 
   pub fn to_bytes<Write: io::Write>(&self, buffer: &mut Write)
                                     -> io::Result<()> {
-    try!(buffer.write_all(&self.id.as_bytes()));
+    buffer.write_all(&self.id.as_bytes())?;
 
     buffer.write_all(&self.data)
   }
@@ -355,9 +355,9 @@ impl SeekPoint {
 
   pub fn to_bytes<Write: io::Write>(&self, buffer: &mut Write)
                                     -> io::Result<()> {
-    try!(buffer.write_be_u64(self.sample_number));
+    buffer.write_be_u64(self.sample_number)?;
 
-    try!(buffer.write_be_u64(self.stream_offset));
+    buffer.write_be_u64(self.stream_offset)?;
 
     buffer.write_be_u16(self.frame_samples)
   }
@@ -392,10 +392,10 @@ impl VorbisComment {
     let vendor_length  = vendor_bytes.len();
     let comments_count = self.comments.len();
 
-    try!(buffer.write_le_u32(vendor_length as u32));
-    try!(buffer.write_all(vendor_bytes));
+    buffer.write_le_u32(vendor_length as u32)?;
+    buffer.write_all(vendor_bytes)?;
 
-    try!(buffer.write_le_u32(comments_count as u32));
+    buffer.write_le_u32(comments_count as u32)?;
 
     for (key, value) in &self.comments {
       let key_bytes    = key.as_bytes();
@@ -404,13 +404,13 @@ impl VorbisComment {
       let value_length = value_bytes.len();
       let length       = key_length + value_length + 1;
 
-      try!(buffer.write_le_u32(length as u32));
+      buffer.write_le_u32(length as u32)?;
 
-      try!(buffer.write_all(key_bytes));
-      try!(buffer.write_u8(b'='));
+      buffer.write_all(key_bytes)?;
+      buffer.write_u8(b'=')?;
 
 
-      try!(buffer.write_all(value_bytes));
+      buffer.write_all(value_bytes)?;
     }
 
     Ok(())
@@ -446,22 +446,22 @@ impl CueSheet {
     let mut flag   = 0;
     let tracks_len = self.tracks.len();
 
-    try!(buffer.write_all(self.media_catalog_number.as_bytes()));
+    buffer.write_all(self.media_catalog_number.as_bytes())?;
 
-    try!(buffer.write_be_u64(self.lead_in));
+    buffer.write_be_u64(self.lead_in)?;
 
     if self.is_cd {
       flag |= 0b10000000;
     }
 
-    try!(buffer.write_u8(flag));
+    buffer.write_u8(flag)?;
 
-    try!(buffer.write_all(&[0; 258]));
+    buffer.write_all(&[0; 258])?;
 
-    try!(buffer.write_u8(tracks_len as u8));
+    buffer.write_u8(tracks_len as u8)?;
 
     for track in &self.tracks {
-      try!(track.to_bytes(&mut buffer));
+      track.to_bytes(&mut buffer)?;
     }
 
     Ok(())
@@ -498,11 +498,11 @@ impl CueSheetTrack {
     let num_indices = self.indices.len();
     let mut flags   = 0;
 
-    try!(buffer.write_be_u64(self.offset));
+    buffer.write_be_u64(self.offset)?;
 
-    try!(buffer.write_u8(self.number));
+    buffer.write_u8(self.number)?;
 
-    try!(buffer.write_all(self.isrc.as_bytes()));
+    buffer.write_all(self.isrc.as_bytes())?;
 
     if !self.is_audio {
       flags |= 0b10000000;
@@ -512,14 +512,14 @@ impl CueSheetTrack {
       flags |= 0b01000000;
     }
 
-    try!(buffer.write_u8(flags));
+    buffer.write_u8(flags)?;
 
-    try!(buffer.write_all(&[0; 13]));
+    buffer.write_all(&[0; 13])?;
 
-    try!(buffer.write_u8(num_indices as u8));
+    buffer.write_u8(num_indices as u8)?;
 
     for indice in &self.indices {
-      try!(indice.to_bytes(buffer));
+      indice.to_bytes(buffer)?;
     }
 
     Ok(())
@@ -543,9 +543,9 @@ impl CueSheetTrackIndex {
 
   pub fn to_bytes<Write: io::Write>(&self, buffer: &mut Write)
                                     -> io::Result<()> {
-    try!(buffer.write_be_u64(self.offset));
+    buffer.write_be_u64(self.offset)?;
 
-    try!(buffer.write_u8(self.number));
+    buffer.write_u8(self.number)?;
 
     buffer.write_all(&[0; 3])
   }
@@ -620,20 +620,20 @@ impl Picture {
     };
 
 
-    try!(buffer.write_be_u32(picture_type));
+    buffer.write_be_u32(picture_type)?;
 
-    try!(buffer.write_be_u32(mime_type_len as u32));
-    try!(buffer.write_all(mime_type));
+    buffer.write_be_u32(mime_type_len as u32)?;
+    buffer.write_all(mime_type)?;
 
-    try!(buffer.write_be_u32(description_len as u32));
-    try!(buffer.write_all(description));
+    buffer.write_be_u32(description_len as u32)?;
+    buffer.write_all(description)?;
 
-    try!(buffer.write_be_u32(self.width));
-    try!(buffer.write_be_u32(self.height));
-    try!(buffer.write_be_u32(self.depth));
-    try!(buffer.write_be_u32(self.colors));
+    buffer.write_be_u32(self.width)?;
+    buffer.write_be_u32(self.height)?;
+    buffer.write_be_u32(self.depth)?;
+    buffer.write_be_u32(self.colors)?;
 
-    try!(buffer.write_be_u32(data_len as u32));
+    buffer.write_be_u32(data_len as u32)?;
     buffer.write_all(&self.data)
   }
 }

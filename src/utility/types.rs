@@ -276,7 +276,7 @@ fn fill<R: Read>(buffer: &mut Buffer, reader: &mut R, needed: usize)
     buffer.resize(needed);
 
     while buffer.len() < needed {
-      let size_read = try!(buffer.fill(reader));
+      let size_read = buffer.fill(reader)?;
 
       if size_read > 0 {
         read += size_read;
@@ -356,7 +356,7 @@ impl<R> StreamProducer for ReadStream<R> where R: Read {
   fn parse<F, T>(&mut self, f: F) -> Result<T, ErrorKind>
    where F: FnOnce(&[u8]) -> IResult<&[u8], T, ErrorKind> {
     if self.state != ParserState::EndOfInput {
-      try!(self.fill().map_err(|e| ErrorKind::IO(e.kind())));
+      self.fill().map_err(|e| ErrorKind::IO(e.kind()))?;
     }
 
     let mut buffer = &mut self.buffer;

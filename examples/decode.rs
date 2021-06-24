@@ -40,10 +40,9 @@ fn to_io_error(kind: ErrorKind) -> hound::Error {
 
 fn decode_file(input_file: &str, output_file: &str)
                -> Result<(), hound::Error> {
-  let mut stream = try! {
+  let mut stream =
     StreamReader::<fs::File>::from_file(input_file)
-      .map_err(to_io_error)
-  };
+      .map_err(to_io_error)?;
 
   let info = stream.info();
   let spec = hound::WavSpec {
@@ -52,19 +51,19 @@ fn decode_file(input_file: &str, output_file: &str)
     bits_per_sample: info.bits_per_sample as u16,
   };
 
-  let mut output = try!(hound::WavWriter::create(output_file, spec));
+  let mut output = hound::WavWriter::create(output_file, spec)?;
 
   if info.bits_per_sample <= 8 {
     for sample in stream.iter::<i8>() {
-      try!(output.write_sample(sample));
+      output.write_sample(sample)?;
     }
   } else if info.bits_per_sample <= 16 {
     for sample in stream.iter::<i16>() {
-      try!(output.write_sample(sample));
+      output.write_sample(sample)?;
     }
   } else {
     for sample in stream.iter::<i32>() {
-      try!(output.write_sample(sample));
+      output.write_sample(sample)?;
     }
   }
 
@@ -92,24 +91,23 @@ fn decode_all_files(input_files: &Vec<String>, directory: &str)
   let dir_path = Path::new(directory);
 
   if !dir_path.exists() {
-    try!(fs::create_dir(dir_path).map_err(hound::Error::IoError))
+    fs::create_dir(dir_path).map_err(hound::Error::IoError)?;
   }
 
   for ref input_file in input_files {
     let mut buffer = PathBuf::new();
     let path       = Path::new(input_file);
 
-    try!(to_output_file(&mut buffer, path, directory));
+    to_output_file(&mut buffer, path, directory)?;
 
-    let output_file = try! {
+    let output_file =
       buffer.to_str().ok_or_else(|| {
         let kind    = io::ErrorKind::InvalidInput;
         let message = "invalid unicode with file path";
         let error   = io::Error::new(kind, message);
 
         hound::Error::IoError(error)
-      })
-    };
+      })?;
 
     let result = decode_file(input_file, output_file);
 
